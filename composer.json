@@ -1,11 +1,17 @@
 {
     "name": "gregpriday/laravel-zyte-api",
-    "description": "This is my package laravel-zyte-api",
+    "description": "A Laravel package for seamless integration with Zyte's web scraping API, offering functionalities for extracting raw HTML, browser-rendered HTML, and structured article content.",
     "keywords": [
-        "Greg Priday",
-        "laravel",
-        "laravel-zyte-api"
+        "web scraping",
+        "zyte",
+        "laravel extension",
+        "data extraction",
+        "API integration",
+        "article content extraction",
+        "HTML extraction",
+        "laravel package"
     ],
+    "type": "library",
     "homepage": "https://github.com/gregpriday/laravel-zyte-api",
     "license": "MIT",
     "authors": [
@@ -17,8 +23,12 @@
     ],
     "require": {
         "php": "^8.1",
+        "caseyamcl/guzzle_retry_middleware": "^2.9",
+        "guzzlehttp/guzzle": "^7.8",
+        "illuminate/contracts": "^10.0",
+        "league/html-to-markdown": "^5.1",
         "spatie/laravel-package-tools": "^1.14.0",
-        "illuminate/contracts": "^10.0"
+        "symfony/dom-crawler": "^7.0"
     },
     "require-dev": {
         "laravel/pint": "^1.0",
@@ -35,8 +45,7 @@
     },
     "autoload": {
         "psr-4": {
-            "GregPriday\\ZyteApi\\": "src/",
-            "GregPriday\\ZyteApi\\Database\\Factories\\": "database/factories/"
+            "GregPriday\\ZyteApi\\": "src/"
         }
     },
     "autoload-dev": {

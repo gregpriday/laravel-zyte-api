@@ -17,9 +17,13 @@ class ZyteApiServiceProvider extends PackageServiceProvider
          */
         $package
             ->name('laravel-zyte-api')
-            ->hasConfigFile()
-            ->hasViews()
-            ->hasMigration('create_laravel-zyte-api_table')
-            ->hasCommand(ZyteApiCommand::class);
+            ->hasConfigFile();
+    }
+
+    public function packageBooted()
+    {
+        $this->app->singleton(ZyteApi::class, function () {
+            return new ZyteApi(config('zyte-api.key'));
+        });
     }
 }

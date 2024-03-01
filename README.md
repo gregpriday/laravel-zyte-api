@@ -1,84 +1,90 @@
-# This is my package laravel-zyte-api
+# Laravel Zyte API
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/gregpriday/laravel-zyte-api.svg?style=flat-square)](https://packagist.org/packages/gregpriday/laravel-zyte-api)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/gregpriday/laravel-zyte-api/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/gregpriday/laravel-zyte-api/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/gregpriday/laravel-zyte-api/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/gregpriday/laravel-zyte-api/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/gregpriday/laravel-zyte-api.svg?style=flat-square)](https://packagist.org/packages/gregpriday/laravel-zyte-api)
+Laravel Zyte API is a Laravel extension tailored for integrating the powerful web scraping capabilities of Zyte's API into Laravel applications. Focused predominantly on extracting article content, this package simplifies the process of fetching raw HTML, browser-rendered HTML, or structured article data from web pages through Zyte's advanced data extraction API.
 
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+## Features
 
-## Support us
-
-[<img src="https://github-ads.s3.eu-central-1.amazonaws.com/laravel-zyte-api.jpg?t=1" width="419px" />](https://spatie.be/github-ad-click/laravel-zyte-api)
-
-We invest a lot of resources into creating [best in class open source packages](https://spatie.be/open-source). You can support us by [buying one of our paid products](https://spatie.be/open-source/support-us).
-
-We highly appreciate you sending us a postcard from your hometown, mentioning which of our package(s) you are using. You'll find our address on [our contact page](https://spatie.be/about-us). We publish all received postcards on [our virtual postcard wall](https://spatie.be/open-source/postcards).
+- Facilitates easy access to Zyte API services through a simple Laravel facade.
+- Provides methods for extracting raw HTML, browser-rendered HTML, and structured article content.
+- Supports configurable concurrency for handling batch requests efficiently.
+- Implements built-in retry logic for robust handling of API request failures.
+- Utilizes GuzzleHttp for making HTTP requests, ensuring efficient communication with the Zyte API.
+- Automatically registers with Laravel's service provider auto-discovery, simplifying setup.
 
 ## Installation
 
-You can install the package via composer:
+Install the package via Composer by running the following command in your Laravel project directory:
 
 ```bash
 composer require gregpriday/laravel-zyte-api
 ```
 
-You can publish and run the migrations with:
+Laravel's package auto-discovery feature automatically registers the service provider and facade, so there's no need for manual registration.
+
+## Configuration
+
+Publish the package configuration to your project to set up your Zyte API key and other settings:
 
 ```bash
-php artisan vendor:publish --tag="laravel-zyte-api-migrations"
-php artisan migrate
+php artisan vendor:publish --provider="GregPriday\ZyteApi\ZyteApiServiceProvider"
 ```
 
-You can publish the config file with:
-
-```bash
-php artisan vendor:publish --tag="laravel-zyte-api-config"
-```
-
-This is the contents of the published config file:
+This command creates a `config/zyte-api.php` file. You should edit this file to include your Zyte API key:
 
 ```php
 return [
+    'key' => env('ZYTE_API_KEY', 'your-zyte-api-key-here'),
 ];
 ```
 
-Optionally, you can publish the views using
+Add your Zyte API key to your `.env` file to keep it secure:
 
-```bash
-php artisan vendor:publish --tag="laravel-zyte-api-views"
+```
+ZYTE_API_KEY=your-zyte-api-key-here
 ```
 
 ## Usage
 
+### Extracting Article Content
+
+To extract article content from a URL, use the following code:
+
 ```php
-$zyteApi = new GregPriday\ZyteApi();
-echo $zyteApi->echoPhrase('Hello, GregPriday!');
+use GregPriday\ZyteApi\Facades\ZyteApi;
+
+$url = 'http://example.com/some-article';
+$articleContent = ZyteApi::getArticleContent($url);
+
+echo $articleContent['content']; // Displays the article content in Markdown
+print_r($articleContent['meta']); // Shows article metadata, such as URL, headline, authors, etc.
+```
+
+### Extracting Raw or Browser-Rendered HTML
+
+For extracting raw HTML or browser-rendered HTML from a URL, you can do:
+
+```php
+$rawHtml = ZyteApi::extractHttpBody($url);
+$browserHtml = ZyteApi::extractBrowserHtml($url);
+
+echo $rawHtml; // Outputs raw HTML content
+echo $browserHtml; // Outputs browser-rendered HTML content
 ```
 
 ## Testing
 
+The package includes PHPUnit tests. Run the tests by navigating to your project directory and executing:
+
 ```bash
-composer test
+vendor/bin/phpunit
 ```
 
-## Changelog
-
-Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
+Make sure your test environment is properly configured to prevent real API calls to Zyte during testing.
 
 ## Contributing
 
-Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
-
-## Security Vulnerabilities
-
-Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
-
-## Credits
-
-- [Greg Priday](https://github.com/gregpriday)
-- [All Contributors](../../contributors)
+Contributions to the Laravel Zyte API package are welcome. Feel free to submit pull requests with improvements, bug fixes, or suggestions. Please ensure your contributions adhere to the project's coding standards and conventions.
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+The Laravel Zyte API package is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT).
