@@ -6,7 +6,6 @@ use GregPriday\ZyteApi\ZyteApi;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Response;
 
 class ZyteApiTest extends TestCase
@@ -18,12 +17,11 @@ class ZyteApiTest extends TestCase
         $this->assertInstanceOf(ZyteApi::class, $zyteApi);
     }
 
-
     /** @test */
     public function it_extracts_http_body_from_url()
     {
         $mock = new MockHandler([
-            new Response(200, [], json_encode(['httpResponseBody' => base64_encode('<html>Test</html>')]))
+            new Response(200, [], json_encode(['httpResponseBody' => base64_encode('<html>Test</html>')])),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -40,7 +38,7 @@ class ZyteApiTest extends TestCase
     public function it_handles_api_errors_gracefully()
     {
         $mock = new MockHandler([
-            new Response(500, [], 'Internal Server Error')
+            new Response(500, [], 'Internal Server Error'),
         ]);
 
         $handlerStack = HandlerStack::create($mock);
@@ -52,6 +50,4 @@ class ZyteApiTest extends TestCase
 
         $this->assertStringContainsString('Error:', $response);
     }
-
-
 }

@@ -4,7 +4,6 @@ namespace GregPriday\ZyteApi;
 
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use GregPriday\ZyteApi\Commands\ZyteApiCommand;
 
 class ZyteApiServiceProvider extends PackageServiceProvider
 {

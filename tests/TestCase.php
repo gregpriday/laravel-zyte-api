@@ -2,9 +2,9 @@
 
 namespace GregPriday\ZyteApi\Tests;
 
+use GregPriday\ZyteApi\ZyteApiServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use GregPriday\ZyteApi\ZyteApiServiceProvider;
 
 class TestCase extends Orchestra
 {

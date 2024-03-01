@@ -15,6 +15,7 @@ use Symfony\Component\DomCrawler\Crawler;
 class ZyteApi
 {
     const CONCURRENCY = 5;
+
     const API_ENDPOINT = 'https://api.zyte.com/v1/extract';
 
     private Client $client;
@@ -23,14 +24,14 @@ class ZyteApi
 
     private string $endpoint;
 
-    public function __construct(string $apiKey = null, string $endpoint = null, Client $client = null)
+    public function __construct(?string $apiKey = null, ?string $endpoint = null, ?Client $client = null)
     {
         // Set the API key from the parameter or from a configuration/environment variable
         $this->apiKey = $apiKey ?? '';
         $this->endpoint = $endpoint ?? self::API_ENDPOINT;
 
         // Create a Guzzle handler stack and add the retry middleware
-        if(!$client) {
+        if (! $client) {
             $stack = HandlerStack::create();
             $stack->push(GuzzleRetryMiddleware::factory([
                 'retries_enabled' => true,
@@ -67,16 +68,15 @@ class ZyteApi
     /**
      * Extract data from URLs using callback for processing.
      *
-     * @param array $urls The URLs to extract from
-     * @param callable|null $processCallback A callback to process each response
-     * @param array $additionalArgs Additional request parameters
-     * @return array
+     * @param  array  $urls  The URLs to extract from
+     * @param  callable|null  $processCallback  A callback to process each response
+     * @param  array  $additionalArgs  Additional request parameters
      */
-    protected function extract(array $urls, callable $processCallback = null, array $additionalArgs = []): array
+    protected function extract(array $urls, ?callable $processCallback = null, array $additionalArgs = []): array
     {
         $requests = function ($urls, $additionalArgs) {
             foreach ($urls as $url) {
-                yield function() use ($url, $additionalArgs) {
+                yield function () use ($url, $additionalArgs) {
                     return $this->client->sendAsync($this->requestFactory(array_merge([
                         'url' => $url,
                     ], $additionalArgs)));
@@ -95,8 +95,8 @@ class ZyteApi
                 $responses[$urls[$index]] = $processCallback ? $processCallback($data) : $data;
             },
             'rejected' => function ($reason, $index) use (&$responses, $urls) {
-                $responses[$urls[$index]] = 'Error: ' . $reason->getMessage();
-            }
+                $responses[$urls[$index]] = 'Error: '.$reason->getMessage();
+            },
         ]);
 
         // Initiate the transfers and create a promise
@@ -111,36 +111,35 @@ class ZyteApi
     /**
      * Extract the HTML from a URL.
      *
-     * @param string|array $url The URL to extract from
-     * @return string|array
+     * @param  string|array  $url  The URL to extract from
      */
     public function extractHttpBody(string|array $url): string|array
     {
         $returnSingle = is_string($url);
         $urls = Arr::wrap($url);
 
-        $result = $this->extract($urls, function($data) {
+        $result = $this->extract($urls, function ($data) {
             $decodedData = json_decode($data);
+
             return base64_decode($decodedData->httpResponseBody ?? '');
         }, ['httpResponseBody' => true]);
 
         return $returnSingle ? $result[$urls[0]] : $result;
     }
 
-
     /**
      * Extract the HTML from URLs using the browser engine.
      *
-     * @param string|array $url The URL(s) to extract from
-     * @return string|array
+     * @param  string|array  $url  The URL(s) to extract from
      */
     public function extractBrowserHtml(string|array $url): string|array
     {
         $returnSingle = is_string($url);
         $urls = Arr::wrap($url);
 
-        $result = $this->extract($urls, function($data) {
+        $result = $this->extract($urls, function ($data) {
             $decodedData = json_decode($data);
+
             return $decodedData->browserHtml ?? '';
         }, ['browserHtml' => true]);
 
@@ -150,15 +149,14 @@ class ZyteApi
     /**
      * Extract an article using the Zyte API.
      *
-     * @param string|array $url The URL(s) to extract from
-     * @return stdClass|array
+     * @param  string|array  $url  The URL(s) to extract from
      */
     public function extractArticle(string|array $url): stdClass|array
     {
         $returnSingle = is_string($url);
         $urls = Arr::wrap($url);
 
-        $result = $this->extract($urls, function($data) {
+        $result = $this->extract($urls, function ($data) {
             return json_decode($data);
         }, ['article' => true]);
 
@@ -171,13 +169,13 @@ class ZyteApi
         $urls = Arr::wrap($url);
 
         // Extract the article HTML using the Zyte API
-        $result = $this->extract($urls, function($data) {
+        $result = $this->extract($urls, function ($data) {
             $decodedData = json_decode($data);
             $article = $decodedData->article->articleBodyHtml ?? '';
             $article = $this->htmlToCleanMarkdown($article);
 
             // If we don't have an article body, then we don't want to return anything.
-            if(empty($article)) {
+            if (empty($article)) {
                 return [
                     'meta' => [],
                     'content' => '',
@@ -189,14 +187,14 @@ class ZyteApi
             $meta['headline'] = $decodedData->article->headline ?? '';
 
             $htmlTitle = $this->getTitleFromHtml($decodedData->browserHtml ?? '');
-            if(!empty($htmlTitle)) {
+            if (! empty($htmlTitle)) {
                 $meta['html_title'] = $htmlTitle;
             }
-            if(!empty($decodedData->article->datePublished)){
+            if (! empty($decodedData->article->datePublished)) {
                 $meta['published_on'] = Carbon::parse($decodedData->article->datePublished)->format('j F Y');
             }
-            if(!empty($decodedData->article->authors) && is_array($decodedData->article->authors)) {
-                $meta['authors'] = array_map(fn($a) => $a->name, $decodedData->article->authors);
+            if (! empty($decodedData->article->authors) && is_array($decodedData->article->authors)) {
+                $meta['authors'] = array_map(fn ($a) => $a->name, $decodedData->article->authors);
             }
 
             return [
@@ -223,6 +221,7 @@ class ZyteApi
         ]);
 
         $markdown = $converter->convert($cleanHtml);
+
         return $markdown;
     }
 
@@ -230,6 +229,7 @@ class ZyteApi
     {
         $crawler = new Crawler($html);
         $title = $crawler->filter('head > title');
+
         return $title->count() > 0 ? $title->text() : null;
     }
 }
