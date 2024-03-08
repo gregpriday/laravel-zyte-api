@@ -3,6 +3,7 @@
 namespace GregPriday\ZyteApi;
 
 use Carbon\Carbon;
+use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Pool;
@@ -172,7 +173,11 @@ class ZyteApi
         $result = $this->extract($urls, function ($data) {
             $decodedData = json_decode($data);
             $article = $decodedData->article->articleBodyHtml ?? '';
-            $article = $this->htmlToCleanMarkdown($article);
+            try {
+                $article = $this->htmlToCleanMarkdown($article);
+            } catch (Exception $e) {
+                $article = '';
+            }
 
             // If we don't have an article body, then we don't want to return anything.
             if (empty($article)) {
