@@ -211,7 +211,7 @@ class ZyteApi
         return $returnSingle ? $result[$urls[0]] : $result;
     }
 
-    private function htmlToCleanMarkdown(string $html): string
+    public static function htmlToCleanMarkdown(string $html): string
     {
         $crawler = new Crawler($html);
         $crawler->filter('figure, iframe, audio, video, img')->each(function (Crawler $node) {
