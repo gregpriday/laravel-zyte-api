@@ -2,8 +2,6 @@
 
 namespace GregPriday\ZyteApi;
 
-use Carbon\Carbon;
-use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Pool;
@@ -164,53 +162,6 @@ class ZyteApi
         return $returnSingle ? $result[$urls[0]] : $result;
     }
 
-    public function getArticleContent(string|array $url): string|array
-    {
-        $returnSingle = is_string($url);
-        $urls = Arr::wrap($url);
-
-        // Extract the article HTML using the Zyte API
-        $result = $this->extract($urls, function ($data) {
-            $decodedData = json_decode($data);
-            $article = $decodedData->article->articleBodyHtml ?? '';
-            try {
-                $article = $this->htmlToCleanMarkdown($article);
-            } catch (Exception $e) {
-                $article = '';
-            }
-
-            // If we don't have an article body, then we don't want to return anything.
-            if (empty($article)) {
-                return [
-                    'meta' => [],
-                    'content' => '',
-                ];
-            }
-
-            $meta = [];
-            $meta['url'] = $decodedData->url;
-            $meta['headline'] = $decodedData->article->headline ?? '';
-
-            $htmlTitle = $this->getTitleFromHtml($decodedData->browserHtml ?? '');
-            if (! empty($htmlTitle)) {
-                $meta['html_title'] = $htmlTitle;
-            }
-            if (! empty($decodedData->article->datePublished)) {
-                $meta['published_on'] = Carbon::parse($decodedData->article->datePublished)->format('j F Y');
-            }
-            if (! empty($decodedData->article->authors) && is_array($decodedData->article->authors)) {
-                $meta['authors'] = array_map(fn ($a) => $a->name, $decodedData->article->authors);
-            }
-
-            return [
-                'meta' => $meta,
-                'content' => $article,
-            ];
-        }, ['article' => true, 'browserHtml' => true]);
-
-        return $returnSingle ? $result[$urls[0]] : $result;
-    }
-
     public static function htmlToCleanMarkdown(string $html): string
     {
         $crawler = new Crawler($html);
@@ -228,13 +179,5 @@ class ZyteApi
         $markdown = $converter->convert($cleanHtml);
 
         return $markdown;
-    }
-
-    private function getTitleFromHtml(string $html): ?string
-    {
-        $crawler = new Crawler($html);
-        $title = $crawler->filter('head > title');
-
-        return $title->count() > 0 ? $title->text() : null;
     }
 }
