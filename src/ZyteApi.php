@@ -9,6 +9,7 @@ use GuzzleHttp\Psr7\Request;
 use GuzzleRetry\GuzzleRetryMiddleware;
 use Illuminate\Support\Arr;
 use League\HTMLToMarkdown\HtmlConverter;
+use stdClass;
 use Symfony\Component\DomCrawler\Crawler;
 
 class ZyteApi
