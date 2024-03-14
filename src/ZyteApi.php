@@ -151,7 +151,7 @@ class ZyteApi
      *
      * @param  string|array  $url  The URL(s) to extract from
      */
-    public function extractArticle(string|array $url): stdClass|array
+    public function extractArticle(string|array $url): stdClass|array|string
     {
         $returnSingle = is_string($url);
         $urls = Arr::wrap($url);
