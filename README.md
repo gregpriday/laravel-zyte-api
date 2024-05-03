@@ -1,5 +1,7 @@
 # Laravel Zyte API
 
+> ⚠️ **Important Notice** ⚠️: This package is currently in an early development stage, and breaking changes may be introduced with each new release. While we strive to maintain stability, users should exercise caution and closely review the changelog when upgrading to newer versions. Contributions and feedback are welcome to help improve the package's stability and functionality.
+
 Laravel Zyte API is a powerful Laravel package that seamlessly integrates Zyte's web scraping capabilities into your Laravel applications. With a focus on flexibility and ease of use, this package simplifies the process of extracting data from web pages using Zyte's advanced data extraction API.
 
 ## Features
