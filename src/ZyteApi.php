@@ -8,9 +8,6 @@ use GuzzleHttp\Pool;
 use GuzzleHttp\Psr7\Request;
 use GuzzleRetry\GuzzleRetryMiddleware;
 use Illuminate\Support\Arr;
-use League\HTMLToMarkdown\HtmlConverter;
-use stdClass;
-use Symfony\Component\DomCrawler\Crawler;
 
 class ZyteApi
 {
@@ -24,7 +21,9 @@ class ZyteApi
 
     private string $endpoint;
 
-    public function __construct(?string $apiKey = null, ?string $endpoint = null, ?Client $client = null)
+    private int $concurrency;
+
+    public function __construct(?string $apiKey = null, ?string $endpoint = null, ?Client $client = null, int $concurrency = self::CONCURRENCY)
     {
         // Set the API key from the parameter or from a configuration/environment variable
         $this->apiKey = $apiKey ?? '';
@@ -48,6 +47,7 @@ class ZyteApi
         } else {
             $this->client = $client;
         }
+        $this->concurrency = $concurrency;
     }
 
     protected function requestFactory(array $body): Request
@@ -68,12 +68,15 @@ class ZyteApi
     /**
      * Extract data from URLs using callback for processing.
      *
-     * @param  array  $urls  The URLs to extract from
+     * @param  array|string  $urls  The URLs to extract from
+     * @param  array  $args  Additional request parameters
      * @param  callable|null  $processCallback  A callback to process each response
-     * @param  array  $additionalArgs  Additional request parameters
      */
-    protected function extract(array $urls, ?callable $processCallback = null, array $additionalArgs = []): array
+    protected function extract(array|string $urls, array $args = [], ?callable $processCallback = null): mixed
     {
+        $isSingle = is_string($urls);
+        $urls = Arr::wrap($urls);
+
         $requests = function ($urls, $additionalArgs) {
             foreach ($urls as $url) {
                 yield function () use ($url, $additionalArgs) {
@@ -86,16 +89,14 @@ class ZyteApi
 
         $responses = [];
 
-        $pool = new Pool($this->client, $requests($urls, $additionalArgs), [
-            'concurrency' => self::CONCURRENCY,
+        $pool = new Pool($this->client, $requests($urls, $args), [
+            'concurrency' => $this->concurrency,
             'fulfilled' => function ($response, $index) use (&$responses, $urls, $processCallback) {
-                $data = $response->getBody()->getContents();
-
                 // If a callback for processing data is provided, use it
-                $responses[$urls[$index]] = $processCallback ? $processCallback($data) : $data;
+                $responses[$urls[$index]] = $processCallback ? $processCallback($response) : $response;
             },
             'rejected' => function ($reason, $index) use (&$responses, $urls) {
-                $responses[$urls[$index]] = 'Error: '.$reason->getMessage();
+                $responses[$urls[$index]] = $reason;
             },
         ]);
 
@@ -105,80 +106,6 @@ class ZyteApi
         // Force the pool of requests to complete.
         $promise->wait();
 
-        return $responses;
-    }
-
-    /**
-     * Extract the HTML from a URL.
-     *
-     * @param  string|array  $url  The URL to extract from
-     */
-    public function extractHttpBody(string|array $url): string|array
-    {
-        $returnSingle = is_string($url);
-        $urls = Arr::wrap($url);
-
-        $result = $this->extract($urls, function ($data) {
-            $decodedData = json_decode($data);
-
-            return base64_decode($decodedData->httpResponseBody ?? '');
-        }, ['httpResponseBody' => true]);
-
-        return $returnSingle ? $result[$urls[0]] : $result;
-    }
-
-    /**
-     * Extract the HTML from URLs using the browser engine.
-     *
-     * @param  string|array  $url  The URL(s) to extract from
-     */
-    public function extractBrowserHtml(string|array $url): string|array
-    {
-        $returnSingle = is_string($url);
-        $urls = Arr::wrap($url);
-
-        $result = $this->extract($urls, function ($data) {
-            $decodedData = json_decode($data);
-
-            return $decodedData->browserHtml ?? '';
-        }, ['browserHtml' => true]);
-
-        return $returnSingle ? $result[$urls[0]] : $result;
-    }
-
-    /**
-     * Extract an article using the Zyte API.
-     *
-     * @param  string|array  $url  The URL(s) to extract from
-     */
-    public function extractArticle(string|array $url): stdClass|array|string
-    {
-        $returnSingle = is_string($url);
-        $urls = Arr::wrap($url);
-
-        $result = $this->extract($urls, function ($data) {
-            return json_decode($data);
-        }, ['article' => true]);
-
-        return $returnSingle ? $result[$urls[0]] : $result;
-    }
-
-    public static function htmlToCleanMarkdown(string $html): string
-    {
-        $crawler = new Crawler($html);
-        $crawler->filter('figure, iframe, audio, video, img')->each(function (Crawler $node) {
-            $node->getNode(0)->parentNode->removeChild($node->getNode(0));
-        });
-        $cleanHtml = $crawler->html();
-        $cleanHtml = strip_tags($cleanHtml, '<h1><h2><h3><h4><h5><h6><p><a><ul><ol><li>');
-
-        $converter = new HtmlConverter([
-            'header_style' => 'atx',
-            'strip_tags' => true,
-        ]);
-
-        $markdown = $converter->convert($cleanHtml);
-
-        return $markdown;
+        return $isSingle ? $responses[$urls[0]] : $responses;
     }
 }
