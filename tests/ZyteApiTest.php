@@ -2,52 +2,34 @@
 
 namespace GregPriday\ZyteApi\Tests;
 
+use Dotenv\Dotenv;
+use GregPriday\ZyteApi\Proxy\ZyteClient;
 use GregPriday\ZyteApi\ZyteApi;
-use GuzzleHttp\Client;
-use GuzzleHttp\Handler\MockHandler;
-use GuzzleHttp\HandlerStack;
-use GuzzleHttp\Psr7\Response;
 
 class ZyteApiTest extends TestCase
 {
-    /** @test */
-    public function it_initializes_with_default_parameters()
+    protected function setUp(): void
     {
-        $zyteApi = new ZyteApi();
-        $this->assertInstanceOf(ZyteApi::class, $zyteApi);
+        Dotenv::createImmutable(__DIR__.'/../')->load();
+        parent::setUp();
     }
 
     /** @test */
-    public function it_extracts_http_body_from_url()
+    public function test_fetch_http_response_body()
     {
-        $mock = new MockHandler([
-            new Response(200, [], json_encode(['httpResponseBody' => base64_encode('<html>Test</html>')])),
-        ]);
+        $api = app(ZyteApi::class);
+        $response = $api->extract('https://searchsocket.com');
 
-        $handlerStack = HandlerStack::create($mock);
-        $client = new Client(['handler' => $handlerStack]);
-
-        $zyteApi = new ZyteApi('dummyKey', ZyteApi::API_ENDPOINT, $client);
-
-        $response = $zyteApi->extractHttpBody('http://test.url');
-
-        $this->assertEquals('<html>Test</html>', $response);
+        $this->assertNotEmpty($response['httpResponseBody']);
+        $this->assertEquals(200, $response['statusCode']);
     }
 
-    /** @test */
-    public function it_handles_api_errors_gracefully()
+    public function test_fetch_http_using_proxy()
     {
-        $mock = new MockHandler([
-            new Response(500, [], 'Internal Server Error'),
-        ]);
+        $client = app(ZyteClient::class);
+        $response = $client->get('https://searchsocket.com');
 
-        $handlerStack = HandlerStack::create($mock);
-        $client = new Client(['handler' => $handlerStack]);
-
-        $zyteApi = new ZyteApi('dummyKey', ZyteApi::API_ENDPOINT, $client);
-
-        $response = $zyteApi->extractHttpBody('http://test.url');
-
-        $this->assertStringContainsString('Error:', $response);
+        $httpResponseBody = $response->getBody()->getContents();
+        $this->assertNotEmpty($httpResponseBody);
     }
 }

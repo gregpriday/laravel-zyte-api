@@ -23,6 +23,10 @@ class ZyteApi
 
     private int $concurrency;
 
+    public static $defaultArgs = [
+        'httpResponseBody' => true,
+    ];
+
     public function __construct(?string $apiKey = null, ?string $endpoint = null, ?Client $client = null, int $concurrency = self::CONCURRENCY)
     {
         // Set the API key from the parameter or from a configuration/environment variable
@@ -72,8 +76,10 @@ class ZyteApi
      * @param  array  $args  Additional request parameters
      * @param  callable|null  $processCallback  A callback to process each response
      */
-    protected function extract(array|string $urls, array $args = [], ?callable $processCallback = null): mixed
+    public function extract(array|string $urls, array $args = [], ?callable $processCallback = null): mixed
     {
+        $args = ! empty($args) ? $args : self::$defaultArgs;
+
         $isSingle = is_string($urls);
         $urls = Arr::wrap($urls);
 
@@ -93,6 +99,13 @@ class ZyteApi
             'concurrency' => $this->concurrency,
             'fulfilled' => function ($response, $index) use (&$responses, $urls, $processCallback) {
                 // If a callback for processing data is provided, use it
+                $response = $response->getBody()->getContents();
+                $response = json_decode($response, true);
+                // Automatically decode the http response body
+                if (isset($response['httpResponseBody'])) {
+                    $response['httpResponseBody'] = base64_decode($response['httpResponseBody']);
+                }
+
                 $responses[$urls[$index]] = $processCallback ? $processCallback($response) : $response;
             },
             'rejected' => function ($reason, $index) use (&$responses, $urls) {

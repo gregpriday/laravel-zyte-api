@@ -24,7 +24,7 @@ class ZyteApiServiceProvider extends PackageServiceProvider
             );
         });
 
-        $this->app->register(ZyteClient::class, function () {
+        $this->app->singleton(ZyteClient::class, function () {
             return new ZyteClient(config('zyte.proxy'));
         });
     }

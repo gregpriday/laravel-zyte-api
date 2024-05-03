@@ -10,6 +10,7 @@ Laravel Zyte API is a powerful Laravel package that seamlessly integrates Zyte's
 - Customizable concurrency for efficient handling of batch requests
 - Built-in retry logic for robust handling of API request failures
 - Utilizes GuzzleHttp for efficient communication with the Zyte API
+- Provides a `Processors` class with utility methods for processing extracted data, such as converting HTML to clean Markdown
 
 ## Installation
 
@@ -21,25 +22,23 @@ composer require gregpriday/laravel-zyte-api
 
 ## Configuration
 
-To configure your Zyte API key and other settings, publish the package configuration file:
+To configure your Zyte API key, proxy, and other settings, publish the package configuration file:
 
 ```bash
 php artisan vendor:publish --provider="GregPriday\ZyteApi\ZyteApiServiceProvider"
 ```
 
-This command will create a `config/zyte-api.php` file in your project. Open this file and add your Zyte API key:
+This command will create a `config/zyte.php` file in your project. Open this file to review the available configuration options.
 
-```php
-return [
-    'key' => env('ZYTE_API_KEY', 'your-zyte-api-key-here'),
-];
-```
-
-For security reasons, it's recommended to store your Zyte API key in your `.env` file:
+Next, add the following entries to your `.env` file:
 
 ```
 ZYTE_API_KEY=your-zyte-api-key-here
+ZYTE_API_CONCURRENCY=5
+ZYTE_PROXY=your-proxy-url-here
 ```
+
+Make sure to replace `your-zyte-api-key-here` with your actual Zyte API key and `your-proxy-url-here` with the appropriate proxy URL.
 
 ## Usage
 
@@ -54,7 +53,7 @@ $url = 'https://example.com';
 $response = ZyteApi::extract($url, ['browserHtml' => true]);
 
 // Access the browser-rendered HTML
-echo $response;
+echo $response['browserHtml'];
 
 $urls = [
     'https://example.com/article1',
@@ -62,9 +61,7 @@ $urls = [
     'https://example.com/article3',
 ];
 
-$responses = ZyteApi::extract($urls, ['article' => true], function ($response) {
-    return json_decode($response->getBody(), true);
-});
+$responses = ZyteApi::extract($urls, ['article' => true]);
 
 // Access the extracted article data for each URL
 foreach ($responses as $url => $articleData) {
@@ -81,25 +78,29 @@ The `extract` method accepts the following parameters:
 - `$args` (array): Additional request parameters to customize the extraction process. Refer to the Zyte API documentation for available options.
 - `$processCallback` (callable|null): An optional callback function to process each API response. If not provided, the raw API response will be returned.
 
-### Customizing Concurrency
-
-By default, the package uses a concurrency limit of 5 for handling batch requests. You can adjust this value by modifying the `CONCURRENCY` constant in the `ZyteApi` class:
-
-```php
-class ZyteApi
-{
-    const CONCURRENCY = 10; // Adjust the concurrency limit as needed
-    // ...
-}
-```
-
 ### Handling Errors
 
 The package includes built-in retry logic to handle API request failures. If a request fails, it will automatically retry up to 5 times before returning an error message. You can customize the retry behavior by modifying the `GuzzleRetryMiddleware` configuration in the `ZyteApi` constructor.
 
+### Using the Zyte Proxy
+
+To make requests through the Zyte proxy, you can use the `ZyteClient` class:
+
+```php
+use GregPriday\ZyteApi\Proxy\ZyteClient;
+
+$client = app(ZyteClient::class);
+$response = $client->get('https://example.com');
+
+$httpResponseBody = $response->getBody()->getContents();
+// ...
+```
+
+Make sure to set the `ZYTE_PROXY` value in your `.env` file to the appropriate proxy URL.
+
 ## Processors
 
-The package also includes a `Processors` class that provides utility methods for processing extracted data. For example, the `htmlToCleanMarkdown` method can be used to convert HTML content to clean Markdown format:
+The package includes a `Processors` class that provides utility methods for processing extracted data. For example, the `htmlToCleanMarkdown` method can be used to convert HTML content to clean Markdown format:
 
 ```php
 use GregPriday\ZyteApi\Facades\ZyteApi;
@@ -112,8 +113,7 @@ $urls = [
 ];
 
 $responses = ZyteApi::extract($urls, ['article' => true], function ($response) {
-    $data = json_decode($response->getBody()->getContents(), true);
-    $articleData = $data['article'];
+    $articleData = $response['article'];
 
     // Convert article HTML content to Markdown
     $articleData['articleBodyMarkdown'] = Processors::htmlToCleanMarkdown($articleData['articleBodyHtml']);
