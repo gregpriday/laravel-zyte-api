@@ -8,7 +8,7 @@ use GuzzleRetry\GuzzleRetryMiddleware;
 
 class ZyteClient extends Client
 {
-    public function __construct(?string $proxy = null)
+    public function __construct(?string $proxy = null, array $config = [])
     {
         $proxy = $proxy ?? config('zyte.proxy');
 
@@ -21,7 +21,7 @@ class ZyteClient extends Client
             throw new NoProxyException();
         }
 
-        parent::__construct([
+        $config = array_merge([
             'headers' => [
                 'X-Crawlera-Profile' => 'desktop',
             ],
@@ -29,6 +29,7 @@ class ZyteClient extends Client
             'verify' => false,
             'timeout' => 600,
             'proxy' => $proxy,
-        ]);
+        ], $config);
+        parent::__construct($config);
     }
 }
