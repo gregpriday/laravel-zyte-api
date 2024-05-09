@@ -9,16 +9,21 @@ use GuzzleRetry\GuzzleRetryMiddleware;
 class ZyteClient extends Client
 {
     const MAX_REDIRECTS = 10;
+
     const DEFAULT_RETRY_MULTIPLIER = 5;
+
     const DEFAULT_TIMEOUT = 600;
+
     const DEFAULT_HEADERS = [
         'X-Crawlera-Profile' => 'desktop',
     ];
+
     const ALLOWED_PROTOCOLS = ['http', 'https'];
 
     /**
-     * @param string|null $proxy Proxy address to be used for the client, or null to fetch from config.
-     * @param array $config Additional configuration options that can override defaults.
+     * @param  string|null  $proxy  Proxy address to be used for the client, or null to fetch from config.
+     * @param  array  $config  Additional configuration options that can override defaults.
+     *
      * @throws NoProxyException If a proxy is required but not provided.
      */
     public function __construct(?string $proxy = null, array $config = [])
@@ -35,16 +40,18 @@ class ZyteClient extends Client
     /**
      * Ensures a proxy is provided, either directly or from configuration.
      *
-     * @param string|null $proxy Proxy address that may have been passed directly.
+     * @param  string|null  $proxy  Proxy address that may have been passed directly.
      * @return string The resolved proxy address.
+     *
      * @throws NoProxyException If no proxy is provided or resolved.
      */
     private function ensureProxy(?string $proxy): string
     {
         $proxy = $proxy ?? config('zyte.proxy');
         if (empty($proxy)) {
-            throw new NoProxyException("Proxy is required but not provided.");
+            throw new NoProxyException('Proxy is required but not provided.');
         }
+
         return $proxy;
     }
 
@@ -59,14 +66,15 @@ class ZyteClient extends Client
         $stack->push(GuzzleRetryMiddleware::factory([
             'default_retry_multiplier' => self::DEFAULT_RETRY_MULTIPLIER,
         ]));
+
         return $stack;
     }
 
     /**
      * Builds the default configuration array for the Guzzle client.
      *
-     * @param string $proxy The proxy address to use.
-     * @param HandlerStack $stack The handler stack to use for the client.
+     * @param  string  $proxy  The proxy address to use.
+     * @param  HandlerStack  $stack  The handler stack to use for the client.
      * @return array The array of default configuration settings.
      */
     private function getDefaultConfig(string $proxy, HandlerStack $stack): array
@@ -82,8 +90,8 @@ class ZyteClient extends Client
                 'strict' => false,
                 'referer' => true,
                 'protocols' => self::ALLOWED_PROTOCOLS,
-                'track_redirects' => true
-            ]
+                'track_redirects' => true,
+            ],
         ];
     }
 }
