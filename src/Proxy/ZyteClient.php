@@ -10,9 +10,11 @@ class ZyteClient extends Client
 {
     const MAX_REDIRECTS = 10;
 
+    const DEFAULT_MAX_RETRIES = 3;
+
     const DEFAULT_RETRY_MULTIPLIER = 5;
 
-    const DEFAULT_TIMEOUT = 300;
+    const DEFAULT_TIMEOUT = 60;
 
     const DEFAULT_HEADERS = [
         'X-Crawlera-Profile' => 'desktop',
@@ -64,6 +66,7 @@ class ZyteClient extends Client
     {
         $stack = HandlerStack::create();
         $stack->push(GuzzleRetryMiddleware::factory([
+            'max_retry_attempts' => self::DEFAULT_MAX_RETRIES,
             'default_retry_multiplier' => self::DEFAULT_RETRY_MULTIPLIER,
         ]));
 
