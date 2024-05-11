@@ -12,7 +12,7 @@ class ZyteClient extends Client
 
     const DEFAULT_RETRY_MULTIPLIER = 5;
 
-    const DEFAULT_TIMEOUT = 600;
+    const DEFAULT_TIMEOUT = 300;
 
     const DEFAULT_HEADERS = [
         'X-Crawlera-Profile' => 'desktop',
